@@ -1,6 +1,5 @@
 #pragma once
 #include "InputControl.h"
-#include "Dependency/include/sqlite3.h"
 #include "SQLiteORM.h"
 #include <map>
 #include <queue>

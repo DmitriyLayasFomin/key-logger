@@ -3,7 +3,6 @@
 
 int main()
 {
-	LPMSG lpmsg = new MSG;
 	Program pr;
 	cout << "start" << endl;
 	pr.start();
