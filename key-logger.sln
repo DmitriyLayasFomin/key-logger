@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32516.85
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "key-logger", "puk-chpuk.vcxproj", "{3E85DC95-A012-4776-B9AD-61C91B2D7501}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "key-logger", "key-logger.vcxproj", "{3E85DC95-A012-4776-B9AD-61C91B2D7501}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SQLiteORM", "SQLiteORM\SQLiteORM.vcxproj", "{25184886-DF11-4A54-8BB6-FE66ECC132C7}"
 EndProject
@@ -46,6 +46,6 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C23E1BC1-DE04-43DC-9C46-4064B8900641}
+		SolutionGuid = {66067A04-EE15-418B-9334-120E8F99FBDD}
 	EndGlobalSection
 EndGlobal
