@@ -1,11 +1,4 @@
 #include "SQLiteORM.h"
-SQLiteORM::SQLiteORM()
-{
-}
-SQLiteORM::SQLiteORM(string fileName)
-{
-    this->fileName = fileName;
-}
 bool SQLiteORM::replace(std::string& str, string from, string to) 
 {
     size_t start_pos = str.find(from);
@@ -74,7 +67,7 @@ string SQLiteORM::getFieldValues(vector<SQLiteField> fields)
 }
 SQLiteORM* SQLiteORM::open()
 {
-    sqlite3_open(this->fileName.c_str(), &this->db);
+    sqlite3_open(this->fileName, &this->db);
     return this;
 }
 SQLiteORM* SQLiteORM::close()
@@ -123,4 +116,9 @@ SQLiteORM* SQLiteORM::insert(vector<SQLiteField> fieldsInsert)
 SQLiteORM* SQLiteORM::selectAll()
 {
     return this;
+}
+
+LPSTR SQLiteORM::getFileName()
+{
+    return this->fileName;
 }

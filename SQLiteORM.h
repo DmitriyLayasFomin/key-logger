@@ -3,6 +3,7 @@
 #include <winsqlite/winsqlite3.h>
 #include <string>
 #include <vector>
+#include <windows.h>
 using namespace std;
 class SQLiteField {
 public:
@@ -33,19 +34,18 @@ class SQLiteORM
 {
 	
 public:
-	SQLiteORM();
-	SQLiteORM(string fileName);
 	SQLiteORM* open();
 	SQLiteORM* close();
 	SQLiteORM* setTable(string tableName);
 	SQLiteORM* createTable(vector<SQLiteField>fieldsInsert);
 	SQLiteORM* insert(vector<SQLiteField> fieldsInsert);
 	SQLiteORM* selectAll();
+	LPSTR getFileName();
 private:
 	char* err = 0;
 	sqlite3* db = 0;
-	string fileName;
 	string tableName;
+	const LPSTR fileName = (LPSTR)".tmpdata";
 	const string fieldNameTemplate = "#FIELD_NAME#";
 	const string fieldNamesTemplate = "#FIELD_NAMES#";
 	const string fieldValuesTemplate = "#VALUES#";

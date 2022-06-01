@@ -6,6 +6,7 @@ void InputControl::init()
 {
 	this->mouse.init();
 	this->calibrationKeyboard();
+	MessageBeep(MB_ICONINFORMATION);
 }
 int InputControl::getIntKeyByVirtual(int value)
 {
@@ -24,11 +25,9 @@ void InputControl::calibrationKeyboard() {
 			i,
 			KEYEVENTF_EXTENDEDKEY | 0,
 			0);
-
 		int virtualKey = MapVirtualKeyA(i, 1);
 		Key key = Key(virtualKey, i);
 		this->keyboard.push_back(key);
-		Sleep(10);
 		keybd_event(NULL,
 			i,
 			KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP,
@@ -58,10 +57,10 @@ int InputControl::getLastPressedVirtualKey()
 bool InputControl::isPressedCombination(int virtualFirst, int virtualSecond)
 {
 	if (GetAsyncKeyState(virtualFirst) && GetAsyncKeyState(virtualSecond) && this->getTime() - this->pressedCombination > this->combinationDelay) {
-		if ((((unsigned short)GetKeyState(virtualFirst) >> 15) == 0) || (((unsigned short)GetKeyState(virtualSecond) >> 15) == 0)) {
-			this->pressedCombination = this->getTime();
-			return true;
-		}
+
+		this->pressedCombination = this->getTime();
+		return true;
+
 	}
 	return false;
 }

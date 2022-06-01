@@ -14,15 +14,14 @@ Program::Program()
 		{"MOUSE_VALUE_R", SQLiteField("MOUSE_VALUE_R","INT")},
 		{"TIME", SQLiteField("TIME","INT")},
 	};
-	SQLiteORM keyboar = SQLiteORM("tmpdata");
-	keyboar.setTable("KEYBOARD")->open()->createTable(getValues(this->keyboarFields))->close();
-	SQLiteORM mouse = SQLiteORM("tmpdata");
-	mouse.setTable("MOUSE")->open()->createTable(getValues(this->mouseFields))->close();
+	SQLiteORM sqlORM;
+	sqlORM.setTable("KEYBOARD")->open()->createTable(getValues(this->keyboarFields))->close();
+	sqlORM.setTable("MOUSE")->open()->createTable(getValues(this->mouseFields))->close();
 }
 void Program::start()
 {
 	this->queueTask.push(std::async(std::launch::async, [&, this] {
-		while (!(GetAsyncKeyState('0') & 0x8000)) {
+		while (!(GetAsyncKeyState('0') & 0x80)) {
 			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x31)) {
 				this->mutex.lock();
 				cout << "Set input start." << endl;
@@ -33,11 +32,16 @@ void Program::start()
 			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x32)) {
 				this->mutex.lock();
 				cout << "Kyelogger start." << endl;
+				MessageBeep(MB_ICONINFORMATION);
 				this->mutex.unlock();
 				this->recordInputControl(VK_LCONTROL, 0x32);
 				this->mutex.lock();
 				cout << "Kyelogger stop." << endl;
+				MessageBeep(MB_ICONERROR);
 				this->mutex.unlock();
+			}
+			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x37)) {
+				break;
 			}
 		}
 	}));
@@ -59,8 +63,8 @@ void Program::writeKey(map<string, SQLiteField> keyboarFields, string keyIntValu
 	keyboarFields.find("KEY_VALUE")->second.setValue(keyIntValue);
 	keyboarFields.find("TIME")->second.setValue(time);
 	this->queueWriter.push(std::async(std::launch::async, [&](map<string, SQLiteField> keyboarFields) {
-		SQLiteORM keyboar = SQLiteORM("tmpdata");
-		keyboar.setTable("KEYBOARD")->open()->insert(this->getValues(keyboarFields))->close();
+		SQLiteORM sqlORM;
+		sqlORM.setTable("KEYBOARD")->open()->insert(this->getValues(keyboarFields))->close();
 	}, keyboarFields));
 }
 void Program::writeMouse(
@@ -78,14 +82,14 @@ void Program::writeMouse(
 	mouseFields.find("MOUSE_VALUE_R")->second.setValue(mouseIntValueR);
 	mouseFields.find("TIME")->second.setValue(time);
 	this->queueWriter.push(std::async(std::launch::async, [&](map<string, SQLiteField> mouseFields) mutable {
-		SQLiteORM mouse = SQLiteORM("tmpdata");
-		mouse.setTable("MOUSE")->open()->insert(this->getValues(mouseFields))->close();
+		SQLiteORM sqlORM;
+		sqlORM.setTable("MOUSE")->open()->insert(this->getValues(mouseFields))->close();
 	}, mouseFields));
 }
 void Program::recordInputControl(int virtualFirst, int virtualSecond)
 {
-	while ((!(GetAsyncKeyState('0') & 0x8000)) && !this->inputControl.isPressedCombination(virtualFirst, virtualSecond) ) {
-		if (this->logInterval) {
+	while ((!(GetAsyncKeyState('0') & 0x80)) && !this->inputControl.isPressedCombination(virtualFirst, virtualSecond) ) {
+		if (this->logInterval > 0) {
 			Sleep(this->logInterval);
 		}
 		int lastVirtual = this->inputControl.getLastPressedVirtualKey();
@@ -101,6 +105,11 @@ void Program::recordInputControl(int virtualFirst, int virtualSecond)
 			std::to_string(time)
 		);
 	}
+}
+int Program::deleteFile()
+{
+	SQLiteORM sqlORM;
+	return DeleteFileA(sqlORM.getFileName());
 }
 int Program::getTime()
 {
