@@ -37,9 +37,10 @@ public:
 	SQLiteORM* open();
 	SQLiteORM* close();
 	SQLiteORM* setTable(string tableName);
+	static int callback(void* data, int argc, char** argv, char** azColName);
 	SQLiteORM* createTable(vector<SQLiteField>fieldsInsert);
 	SQLiteORM* insert(vector<SQLiteField> fieldsInsert);
-	SQLiteORM* selectAll();
+	void selectAll(void* result, string sortFieldName, string sortOrder);
 	LPSTR getFileName();
 private:
 	char* err = 0;
@@ -54,10 +55,11 @@ private:
 	const string autoincrementTemplate = "#AUTO_INCREMENT#";
 	const string fieldsTemplate = "#FIELDS#";
 	const string tableNameTemplate = "#TABLE_NAME#";
+	const string orderTemplate = "#ORDER#";
 	const string fieldInsertTemplate = "#FIELD_NAME# #FIELD_TYPE# #PRIMARY_KEY# #AUTO_INCREMENT#";
 	const string createTableTemplate = "CREATE TABLE #TABLE_NAME# (#FIELDS#);";
 	const string insertTemplate = "INSERT INTO #TABLE_NAME# (#FIELD_NAMES#) VALUES (#VALUES#);";
-	const string selectTemplate = "SELECT * FROM #TABLE_NAME#;";
+	const string selectTemplate = "SELECT * FROM #TABLE_NAME# ORDER BY #FIELD_NAME# #ORDER#;";
 
 	bool replace(std::string& str, string from, string to);
 	string trim(string str);

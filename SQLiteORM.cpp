@@ -1,4 +1,6 @@
 #include "SQLiteORM.h"
+#include <map>
+#include <algorithm>
 bool SQLiteORM::replace(std::string& str, string from, string to) 
 {
     size_t start_pos = str.find(from);
@@ -80,6 +82,16 @@ SQLiteORM* SQLiteORM::setTable(string tableName)
     this->tableName = tableName;
     return this;
 }
+int SQLiteORM::callback(void *data, int argc, char** argv, char** azColName) {
+    
+    vector <SQLiteField> *fieldsVector = (vector <SQLiteField> *)data;
+    for (int i = 0; i < argc; i++) {
+        SQLiteField field = SQLiteField(string(azColName[i]), "");
+        field.setValue(argv[i] ? argv[i] : "NULL");
+        fieldsVector->push_back(field);
+    }
+    return 0;
+}
 SQLiteORM* SQLiteORM::createTable(vector<SQLiteField> fieldsInsert)
 {
     string sql = this->createTableTemplate;
@@ -101,6 +113,7 @@ SQLiteORM* SQLiteORM::createTable(vector<SQLiteField> fieldsInsert)
 }
 SQLiteORM* SQLiteORM::insert(vector<SQLiteField> fieldsInsert)
 {
+    int rc = SQLITE_BUSY;
     string sql = this->insertTemplate;
     for (SQLiteField& field : fieldsInsert) {
         if (field.value == "") {
@@ -110,12 +123,32 @@ SQLiteORM* SQLiteORM::insert(vector<SQLiteField> fieldsInsert)
     this->replace(sql, this->tableNameTemplate, this->tableName);
     this->replace(sql, this->fieldNamesTemplate, this->getFieldNames(fieldsInsert));
     this->replace(sql, this->fieldValuesTemplate, this->getFieldValues(fieldsInsert));
-    sqlite3_exec(this->db, sql.c_str(), 0, 0, &this->err);
+    do {
+        rc = sqlite3_exec(this->db, sql.c_str(), 0, 0, &this->err);
+    } while (rc == SQLITE_BUSY);
+    
     return this;
 }
-SQLiteORM* SQLiteORM::selectAll()
+void SQLiteORM::selectAll(void *result,string sortFieldName, string sortOrder = "ASC")
 {
-    return this;
+    string sql = this->selectTemplate;
+    vector <SQLiteField> pvector;
+    vector <map<string, string>>* vectorMap = (vector <map<string, string>> *)result;
+    map<string, string> tmpMap;
+    this->replace(sql, this->tableNameTemplate, this->tableName);
+    this->replace(sql, this->fieldNameTemplate, sortFieldName);
+    this->replace(sql, this->orderTemplate, sortOrder);
+    sqlite3_exec(this->db, sql.c_str(), callback, &pvector, & this->err);
+    for (auto &value : pvector) {
+        if (tmpMap.size() > 0 && tmpMap.find(value.name) != tmpMap.end()) {
+                vectorMap->push_back(tmpMap);
+                tmpMap.clear();
+        }
+        tmpMap.insert({ value.name ,value.value });
+    }
+    sort(vectorMap->begin(), vectorMap->end(), [&sortFieldName](map<string, string> i1, map<string, string> i2){
+        return (i1.find(sortFieldName)->second < i2.find(sortFieldName)->second);
+    });
 }
 
 LPSTR SQLiteORM::getFileName()

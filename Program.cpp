@@ -40,6 +40,17 @@ void Program::start()
 				MessageBeep(MB_ICONERROR);
 				this->mutex.unlock();
 			}
+			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x33)) {
+				this->mutex.lock();
+				cout << "logged repeat start." << endl;
+				MessageBeep(MB_ICONINFORMATION);
+				this->mutex.unlock();
+				this->loggedRun(VK_LCONTROL, 0x33);
+				this->mutex.lock();
+				cout << "logged repeat stop." << endl;
+				MessageBeep(MB_ICONERROR);
+				this->mutex.unlock();
+			}
 			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x37)) {
 				break;
 			}
@@ -62,7 +73,7 @@ void Program::writeKey(map<string, SQLiteField> keyboarFields, string keyIntValu
 {
 	keyboarFields.find("KEY_VALUE")->second.setValue(keyIntValue);
 	keyboarFields.find("TIME")->second.setValue(time);
-	this->queueWriter.push(std::async(std::launch::async, [&](map<string, SQLiteField> keyboarFields) {
+	this->queueWriter.push(std::async(launch::async, [&](map<string, SQLiteField> keyboarFields) {
 		SQLiteORM sqlORM;
 		sqlORM.setTable("KEYBOARD")->open()->insert(this->getValues(keyboarFields))->close();
 	}, keyboarFields));
@@ -81,7 +92,7 @@ void Program::writeMouse(
 	mouseFields.find("MOUSE_VALUE_L")->second.setValue(mouseIntValueL);
 	mouseFields.find("MOUSE_VALUE_R")->second.setValue(mouseIntValueR);
 	mouseFields.find("TIME")->second.setValue(time);
-	this->queueWriter.push(std::async(std::launch::async, [&](map<string, SQLiteField> mouseFields) mutable {
+	this->queueWriter.push(std::async(launch::async, [&](map<string, SQLiteField> mouseFields) mutable {
 		SQLiteORM sqlORM;
 		sqlORM.setTable("MOUSE")->open()->insert(this->getValues(mouseFields))->close();
 	}, mouseFields));
@@ -106,10 +117,60 @@ void Program::recordInputControl(int virtualFirst, int virtualSecond)
 		);
 	}
 }
+void Program::loggedRun(int first, int second)
+{
+	SQLiteORM sqlORM;
+	
+
+	vector <map<string, string>>* keyBoardVector = new vector <map<string, string>>;
+	vector <map<string, string>>* mouseVector = new vector <map<string, string>>;
+	map <string, int> time = { {"MOUSE",0}, {"KEYBOARD",0} };
+
+	this->queueReader.push(std::async(launch::async, [](vector <map<string, string>>* mouseVector){
+		SQLiteORM sqlORM;
+		sqlORM.setTable("MOUSE")->open()->selectAll(mouseVector, (string)"TIME", (string)"DESC");
+		sqlORM.close();
+		return true;
+	}, mouseVector));
+	this->queueReader.push(std::async(launch::async, [](vector <map<string, string>>* keyBoardVector){
+		SQLiteORM sqlORM;
+		sqlORM.setTable("KEYBOARD")->open()->selectAll(keyBoardVector, (string)"TIME", (string)"DESC");
+		sqlORM.close();
+		return true;
+	}, keyBoardVector));
+	
+	for (int i = 0; i < this->queueReader.size(); i++) {
+		this->queueReader.front().wait();
+	}
+	thread kbrdThread([&time,&keyBoardVector](InputControl* inputControl) mutable {
+		time.find("KEYBOARD")->second = stoi(keyBoardVector->front().find("TIME")->second);
+		for (map<string, string> keyboard : *keyBoardVector) {
+			if (stoi(keyboard.find("TIME")->second) < time.find("MOUSE")->second) {
+				while (stoi(keyboard.find("TIME")->second) >= time.find("MOUSE")->second) {
+					continue;
+				}
+			}
+			time.find("KEYBOARD")->second = stoi(keyboard.find("TIME")->second);
+
+		}
+	}, this->getInputControl());
+	thread msThread([&time, &mouseVector](InputControl* inputControl) mutable {
+		time.find("MOUSE")->second = stoi(mouseVector->front().find("TIME")->second);
+		for (map<string, string> mouse : *mouseVector) {
+			if (stoi(mouse.find("TIME")->second) < time.find("KEYBOARD")->second) {
+				while (stoi(mouse.find("TIME")->second) >= time.find("KEYBOARD")->second) {
+					continue;
+				}
+			}
+			time.find("MOUSE")->second = stoi(mouse.find("TIME")->second);
+
+		}
+	}, this->getInputControl());
+}
 int Program::deleteFile()
 {
 	SQLiteORM sqlORM;
-	return DeleteFileA(sqlORM.getFileName());
+	return 1;//DeleteFileA(sqlORM.getFileName());
 }
 int Program::getTime()
 {
