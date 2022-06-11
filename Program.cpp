@@ -6,6 +6,7 @@ Program::Program()
 	this->keyboarFields = {
 		{"KEY_VALUE", SQLiteField("KEY_VALUE","INT")},
 		{"TIME", SQLiteField("TIME","INT")},
+		{"RELEASED", SQLiteField("RELEASED","INT")}
 	};
 	this->mouseFields = {
 		{"POSITION_X", SQLiteField("POSITION_X","INT")},
@@ -73,10 +74,19 @@ void Program::writeKey(map<string, SQLiteField> keyboarFields, string keyIntValu
 {
 	keyboarFields.find("KEY_VALUE")->second.setValue(keyIntValue);
 	keyboarFields.find("TIME")->second.setValue(time);
-	this->queueWriter.push(std::async(launch::async, [&](map<string, SQLiteField> keyboarFields) {
+	keyboarFields.find("RELEASED")->second.setValue(string("0"));
+	this->queueWriter.push(std::async(launch::async, [&](map<string, SQLiteField> keyboarFields, string keyIntValue) {
 		SQLiteORM sqlORM;
 		sqlORM.setTable("KEYBOARD")->open()->insert(this->getValues(keyboarFields))->close();
-	}, keyboarFields));
+		while (true) {
+			if (!(GetAsyncKeyState(atoi(keyIntValue.c_str())) < 0)) {
+				keyboarFields.find("TIME")->second.setValue(to_string(getTime()));
+				keyboarFields.find("RELEASED")->second.setValue("1");
+				sqlORM.setTable("KEYBOARD")->open()->insert(this->getValues(keyboarFields))->close();
+				break;
+			}
+		}
+	}, keyboarFields, keyIntValue));
 }
 void Program::writeMouse(
 	map<string, SQLiteField> mouseFields,
@@ -99,11 +109,15 @@ void Program::writeMouse(
 }
 void Program::recordInputControl(int virtualFirst, int virtualSecond)
 {
-	while ((!(GetAsyncKeyState('0') & 0x80)) && !this->inputControl.isPressedCombination(virtualFirst, virtualSecond) ) {
+	while (!this->inputControl.isPressedCombination(virtualFirst, virtualSecond) ) {
+		
 		if (this->logInterval > 0) {
 			Sleep(this->logInterval);
 		}
 		int lastVirtual = this->inputControl.getLastPressedVirtualKey();
+		if (lastVirtual == 0) {
+			continue;
+		}
 		int time = this->getTime();
 		this->writeKey(this->keyboarFields, std::to_string(lastVirtual), std::to_string(time));
 		Mouse mouse = this->inputControl.getMouse().getLastState();
@@ -121,7 +135,6 @@ void Program::loggedRun(int first, int second)
 {
 	SQLiteORM sqlORM;
 	
-
 	vector <map<string, string>>* keyBoardVector = new vector <map<string, string>>;
 	vector <map<string, string>>* mouseVector = new vector <map<string, string>>;
 	map <string, int> time = { {"MOUSE",0}, {"KEYBOARD",0} };
@@ -142,6 +155,7 @@ void Program::loggedRun(int first, int second)
 	for (int i = 0; i < this->queueReader.size(); i++) {
 		this->queueReader.front().wait();
 	}
+
 	thread kbrdThread([&time,&keyBoardVector](InputControl* inputControl) mutable {
 		time.find("KEYBOARD")->second = stoi(keyBoardVector->front().find("TIME")->second);
 		for (map<string, string> keyboard : *keyBoardVector) {
@@ -151,7 +165,15 @@ void Program::loggedRun(int first, int second)
 				}
 			}
 			time.find("KEYBOARD")->second = stoi(keyboard.find("TIME")->second);
-
+			Key key = inputControl->getKeyByVirtualValue(stoi(keyboard.find("KEY_VALUE")->second));
+			if (key.getVirtualKeyValue() != 0) {
+				if (stoi(keyboard.find("RELEASED")->second) < 1) {
+					key.press();
+				}
+				else {
+					key.release();
+				}
+			}
 		}
 	}, this->getInputControl());
 	thread msThread([&time, &mouseVector](InputControl* inputControl) mutable {

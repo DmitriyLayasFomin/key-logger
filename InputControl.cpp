@@ -13,7 +13,7 @@ int InputControl::getIntKeyByVirtual(int value)
 	for (Key key : this->keyboard)
 	{
 		if (key.getVirtualKeyValue() == value) {
-			return key.getIntValue();
+			return key.getHardValue();
 		}
 	}
 	return 0;
@@ -34,11 +34,11 @@ void InputControl::calibrationKeyboard() {
 			0);
 	}
 }
-int InputControl::getVirtualKeyByInt(int value)
+int InputControl::getVirtualKeyByHardValue(int value)
 {
 	for (Key key : this->keyboard)
 	{
-		if (key.getIntValue() == value) {
+		if (key.getHardValue() == value) {
 			return key.getVirtualKeyValue();
 		}
 	}
@@ -57,7 +57,6 @@ int InputControl::getLastPressedVirtualKey()
 bool InputControl::isPressedCombination(int virtualFirst, int virtualSecond)
 {
 	if (GetAsyncKeyState(virtualFirst) && GetAsyncKeyState(virtualSecond) && this->getTime() - this->pressedCombination > this->combinationDelay) {
-
 		this->pressedCombination = this->getTime();
 		return true;
 
@@ -67,6 +66,25 @@ bool InputControl::isPressedCombination(int virtualFirst, int virtualSecond)
 int InputControl::getSizeKeyboard() 
 {
 	return this->keyboard.size();
+}
+Key InputControl::getKeyByHardValue(int value)
+{
+	for (Key key : this->keyboard)
+	{
+		if (key.getHardValue() == value) {
+			return key;
+		}
+	}
+}
+Key InputControl::getKeyByVirtualValue(int value)
+{
+	for (Key key : this->keyboard)
+	{
+		if (key.getVirtualKeyValue() == value) {
+			return key;
+		}
+	}
+	return Key(0, 0);
 }
 Mouse InputControl::getMouse()
 {

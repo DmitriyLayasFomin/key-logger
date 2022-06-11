@@ -8,7 +8,7 @@ public:
 	void press();
 	void release();
 	void pressAndRelease(int);
-	int getIntValue();
+	int getHardValue();
 	int getVirtualKeyValue();
 private:
 	char virtualKey;

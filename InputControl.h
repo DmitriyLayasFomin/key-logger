@@ -10,12 +10,14 @@ public:
 	void init();
 	bool isPressedCombination(int first, int second);
 	int getSizeKeyboard();
+	Key getKeyByHardValue(int value);
+	Key getKeyByVirtualValue(int value);
 	Mouse getMouse();
 	int getTime();
 	int getLastPressedVirtualKey();
 private:
 	void calibrationKeyboard();
-	int getVirtualKeyByInt(int);
+	int getVirtualKeyByHardValue(int);
 	int getIntKeyByVirtual(int value);
 	vector <Key> keyboard;
 	Mouse mouse;

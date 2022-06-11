@@ -24,7 +24,7 @@ void Key::pressAndRelease(int delay = 500)
     Sleep(delay);
     this->release();
 };
-int Key::getIntValue()
+int Key::getHardValue()
 {
     return this->intValue;
 };

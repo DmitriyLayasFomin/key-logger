@@ -15,6 +15,7 @@ public:
 	InputControl* getInputControl();
 	void recordInputControl(int virtualFirst, int virtualSecond);
 	int deleteFile();
+	static int getTime();
 private:
 	InputControl inputControl;
 	SQLiteORM keyboar;
@@ -25,12 +26,11 @@ private:
 	queue <std::future<void>> queueTask;
 	queue <std::future<bool>> queueReader;
 	mutex mutex;
-	const int logInterval = 88;
+	const int logInterval = 20;
 
 	void writeKey(map<string, SQLiteField> keyboarFields, string keyIntValue, string time);
 	void writeMouse(map<string, SQLiteField> mouseFields, string positionX, string positionY, string mouseIntValueL, string mouseIntValueR, string time);
 	void loggedRun(int first, int second);
-	int getTime();
 	vector<SQLiteField> getValues(map<string, SQLiteField> map);
 };
 
