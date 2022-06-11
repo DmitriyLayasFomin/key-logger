@@ -29,7 +29,7 @@ private:
 	const int logInterval = 20;
 
 	void writeKey(map<string, SQLiteField> keyboarFields, string keyIntValue, string time);
-	void writeMouse(map<string, SQLiteField> mouseFields, string positionX, string positionY, string mouseIntValueL, string mouseIntValueR, string time);
+	void writeMouse(map<string, SQLiteField> mouseFields, string positionX, string positionY, string time);
 	void loggedRun(int first, int second);
 	vector<SQLiteField> getValues(map<string, SQLiteField> map);
 };

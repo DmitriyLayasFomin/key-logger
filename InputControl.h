@@ -22,7 +22,7 @@ private:
 	vector <Key> keyboard;
 	Mouse mouse;
 	int pressedCombination;
-	const int countChars = 128;
+	const int countChars = 256;
 	const int combinationDelay = 1000;
 };
 
