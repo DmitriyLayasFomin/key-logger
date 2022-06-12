@@ -33,6 +33,8 @@ void InputControl::calibrationKeyboard() {
 			KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP,
 			0);
 	}
+	this->keyboard.push_back(Key(VK_LBUTTON, 0));
+	this->keyboard.push_back(Key(VK_RBUTTON, 0));
 }
 int InputControl::getVirtualKeyByHardValue(int value)
 {

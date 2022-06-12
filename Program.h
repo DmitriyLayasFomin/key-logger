@@ -26,7 +26,7 @@ private:
 	queue <std::future<void>> queueTask;
 	queue <std::future<bool>> queueReader;
 	mutex mutex;
-	const int logInterval = 20;
+	const int logInterval = 80;
 
 	void writeKey(map<string, SQLiteField> keyboarFields, string keyIntValue, string time);
 	void writeMouse(map<string, SQLiteField> mouseFields, string positionX, string positionY, string time);

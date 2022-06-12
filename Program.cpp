@@ -51,10 +51,22 @@ void Program::start()
 				this->mutex.unlock();
 			}
 			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x37)) {
+				this->mutex.lock();
+				cout << "shutdown start." << endl;
+				this->mutex.unlock();
+				for (int i = 0; i < this->queueWriter.size(); i++) {
+					this->queueWriter.front().wait();
+				}
+				for (int i = 0; i < this->queueReader.size(); i++) {
+					this->queueReader.front().wait();
+				}
+				this->mutex.lock();
+				cout << "shutdown success." << endl;
+				this->mutex.unlock();
 				break;
 			}
 		}
-		}));
+	}));
 }
 InputControl* Program::getInputControl()
 {
@@ -76,7 +88,7 @@ void Program::writeKey(map<string, SQLiteField> keyboarFields, string keyIntValu
 	this->queueWriter.push(std::async(launch::async, [&](map<string, SQLiteField> keyboarFields, string keyIntValue) {
 		SQLiteORM sqlORM;
 		sqlORM.setTable("KEYBOARD")->open()->insert(this->getValues(keyboarFields))->close();
-		while (true) {
+		while (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x37)) {
 			if (!(GetAsyncKeyState(atoi(keyIntValue.c_str())) < 0)) {
 				keyboarFields.find("TIME")->second.setValue(to_string(getTime()));
 				keyboarFields.find("RELEASED")->second.setValue("1");
@@ -167,7 +179,7 @@ void Program::loggedRun(int first, int second)
 				}
 			}
 		}
-		}, this->getInputControl());
+	}, this->getInputControl());
 	thread msThread([&time, &mouseVector](InputControl* inputControl) mutable {
 		time.find("MOUSE")->second = stoi(mouseVector->front().find("TIME")->second);
 		for (map<string, string> mouse : *mouseVector) {
@@ -178,7 +190,7 @@ void Program::loggedRun(int first, int second)
 			}
 			time.find("MOUSE")->second = stoi(mouse.find("TIME")->second);
 		}
-		}, this->getInputControl());
+	}, this->getInputControl());
 }
 int Program::deleteFile()
 {
