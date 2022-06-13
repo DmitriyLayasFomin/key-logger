@@ -7,9 +7,9 @@ void Mouse::init()
 	this->positionX = point.x;
 	this->positionY = point.y;
 }
-void Mouse::setMousePointer(int x, int y)
+void Mouse::setMouseCursor(int x, int y)
 {
-	mouse_event(MOUSEEVENTF_ABSOLUTE, x, y, 0, 0);
+	mouse_event(MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE, x, y, 0, 0);
 };
 void Mouse::setPositionX(int positionX)
 {

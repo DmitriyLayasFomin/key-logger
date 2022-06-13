@@ -9,10 +9,10 @@ public:
 	int getPositionX();
 	int getPositionY();
 	Mouse getLastState();
-	void setPositionX(int);
-	void setPositionY(int);
+	void setPositionX(int x);
+	void setPositionY(int y);
+	void setMouseCursor(int x, int y);
 private:
-	void setMousePointer(int, int);
 	int positionX;
 	int positionY;
 };
