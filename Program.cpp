@@ -53,9 +53,6 @@ void Program::start()
 				this->mutex.unlock();
 			}
 			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x37)) {
-				this->mutex.lock();
-				cout << "shutdown start." << endl;
-				this->mutex.unlock();
 				for (int i = 0; i < this->queueWriter.size(); i++) {
 					this->queueWriter.front().wait();
 				}
@@ -64,7 +61,7 @@ void Program::start()
 				}
 				this->mutex.lock();
 				this->exit = true;
-				cout << "shutdown success." << endl;
+				cout << "shutdown." << endl;
 				this->mutex.unlock();
 				break;
 			}
@@ -91,7 +88,7 @@ void Program::writeKey(map<string, SQLiteField> keyboarFields, string keyIntValu
 	this->queueWriter.push(std::async(launch::async, [&](map<string, SQLiteField> keyboarFields, string keyIntValue) {
 		SQLiteORM sqlORM;
 		sqlORM.setTable("KEYBOARD")->open()->insert(this->getValues(keyboarFields))->close();
-		while (!this->exit) {
+		while (!this->exit && !this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x32)) {
 			if (!(GetAsyncKeyState(atoi(keyIntValue.c_str())) < 0)) {
 				keyboarFields.find("TIME")->second.setValue(to_string(getTime()));
 				keyboarFields.find("RELEASED")->second.setValue("1");
@@ -162,11 +159,14 @@ void Program::recordInputControl(int virtualFirst, int virtualSecond)
 }
 void Program::loggedRun(int first, int second)
 {
+	bool *stop = new bool(false);
+	bool a = *stop;
 	SQLiteORM sqlORM;
 	queue <std::future<void>> kbrdThread;
 	queue <std::future<void>> msThread;
 	thread thkbrd;
 	thread thms;
+	thread th;
 	vector <map<string, string>>* keyBoardVector = new vector <map<string, string>>;
 	vector <map<string, string>>* mouseVector = new vector <map<string, string>>;
 	map <string, int> time = { {"MOUSE",0}, {"KEYBOARD",0} };
@@ -189,53 +189,86 @@ void Program::loggedRun(int first, int second)
 
 	int timeDifference = getTime() - stoi(mouseVector->front().find("TIME")->second);
 
-	auto fkbrd = [this, &time, &timeDifference, &keyBoardVector](InputControl* inputControl) mutable {
-		this->keyBoardPlay(time, timeDifference, keyBoardVector, inputControl);
+	auto fkbrd = [this, &stop, &time, &timeDifference, &keyBoardVector](InputControl* inputControl) mutable {
+		this->keyBoardPlay(time, timeDifference, keyBoardVector, inputControl, stop);
 	};
-	auto fmsThread = [this, &time, &timeDifference, &mouseVector](InputControl* inputControl) mutable {
-		this->mousePlay(time, timeDifference, mouseVector, inputControl);
+	auto fmsThread = [this, &stop, &time, &timeDifference, &mouseVector](InputControl* inputControl) mutable {
+		this->mousePlay(time, timeDifference, mouseVector, inputControl, stop);
 	};
-
-	while (!this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x33) && !this->exit) {
+	
+	while (!this->exit && !*stop) {
 		timeDifference = getTime() - stoi(mouseVector->front().find("TIME")->second);
 		kbrdThread.push(std::async(std::launch::async, fkbrd, this->getInputControl()));
 		msThread.push(std::async(std::launch::async, fmsThread, this->getInputControl()));
-		thkbrd = thread([&kbrdThread]() mutable {
-			while (kbrdThread.size() > 0)
-			{
-				kbrdThread.front().wait();
-				kbrdThread.pop();
+		th = thread([this, &stop, &kbrdThread,&msThread]() mutable {
+			
+			if (*stop) {
+				return;
+			}
+			while (!this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x33) && !*stop) {
 
 			}
+			*stop = true;
+			this->mutex.lock();
+			std::cout << "Stopping play... please wait." << endl;
+			this->mutex.unlock();
+			return;
 		});
-		thms = thread([&msThread]() mutable {
+		thkbrd = thread([&kbrdThread, &stop]() mutable {
+			while (kbrdThread.size() > 0)
+			{
+				if (*stop) {
+					while (kbrdThread.size() > 0) {
+						kbrdThread.pop();
+					}
+				}
+				else {
+					kbrdThread.front().wait();
+					kbrdThread.pop();
+				}
+			}
+		});
+		thms = thread([&msThread, &stop]() mutable {
 			while (msThread.size() > 0)
 			{
-				msThread.front().wait();
-				msThread.pop();
-
+				if (*stop) {
+					while (msThread.size() > 0) {
+						msThread.pop();
+					}
+				}
+				else {
+					msThread.front().wait();
+					msThread.pop();
+				}
 			}
 		});
 		thms.join();
 		thkbrd.join();
-		thkbrd.~thread();
-		thms.~thread();
+		th.detach();
+		
+		while(thms.joinable() || thkbrd.joinable()){}
 	}
 }
-void Program::mousePlay(map<string, int>& time, int& timeDifference, vector <map<string, string>>* mouseVector, InputControl* inputControl)
+void Program::mousePlay(map<string, int>& time, int& timeDifference, vector <map<string, string>>* mouseVector, InputControl* inputControl, bool* stop)
 {
-	if (mouseVector->empty()) {
+	this->mousePlayStatusStopped = false;
+	if (mouseVector->empty() || *stop) {
+		this->mousePlayStatusStopped = true;
 		return;
 	}
+
 	int dScreenX = 65535 / GetSystemMetrics(SM_CXVIRTUALSCREEN);
 	int dScreenY = 65535 / GetSystemMetrics(SM_CYVIRTUALSCREEN);
 	time.find("MOUSE")->second = stoi(mouseVector->front().find("TIME")->second);
 	for (map<string, string> mouse : *mouseVector) {
-
 		while (
-			(stoi(mouse.find("TIME")->second) > time.find("KEYBOARD")->second && !(time.find("KEYBOARD")->second == 0)) ||
-			(stoi(mouse.find("TIME")->second) > getTime() - timeDifference)
+			stoi(mouse.find("TIME")->second) > time.find("KEYBOARD")->second && 
+			!(time.find("KEYBOARD")->second == 0) && !this->keyboardPlayStatusStopped &&
+			stoi(mouse.find("TIME")->second) > getTime() - timeDifference
 			) {
+		}
+		if (*stop) {
+			return;
 		}
 		time.find("MOUSE")->second = stoi(mouse.find("TIME")->second);
 		inputControl->getMouse().setMouseCursor(
@@ -243,18 +276,26 @@ void Program::mousePlay(map<string, int>& time, int& timeDifference, vector <map
 			dScreenY * stoi(mouse.find("POSITION_Y")->second)
 		);
 	}
+	this->mousePlayStatusStopped = true;
 }
-void Program::keyBoardPlay(map<string, int>& time, int& timeDifference, vector <map<string, string>>* keyBoardVector, InputControl* inputControl)
+void Program::keyBoardPlay(map<string, int>& time, int& timeDifference, vector <map<string, string>>* keyBoardVector, InputControl* inputControl, bool* stop)
 {
-	if (keyBoardVector->empty()) {
+	this->keyboardPlayStatusStopped = false;
+	if (keyBoardVector->empty() || *stop) {
+		this->keyboardPlayStatusStopped = true;
 		return;
 	}
 	time.find("KEYBOARD")->second = stoi(keyBoardVector->front().find("TIME")->second);
 	for (map<string, string> keyboard : *keyBoardVector) {
 		while (
-			stoi(keyboard.find("TIME")->second) > time.find("MOUSE")->second ||
+			stoi(keyboard.find("TIME")->second) > time.find("MOUSE")->second &&
+			!(time.find("MOUSE")->second == 0) &&
+			!this->mousePlayStatusStopped &&
 			stoi(keyboard.find("TIME")->second) > getTime() - timeDifference
 			) {
+		}
+		if (*stop) {
+			return;
 		}
 		time.find("KEYBOARD")->second = stoi(keyboard.find("TIME")->second);
 		Key key = inputControl->getKeyByVirtualValue(stoi(keyboard.find("KEY_VALUE")->second));
@@ -267,6 +308,7 @@ void Program::keyBoardPlay(map<string, int>& time, int& timeDifference, vector <
 			}
 		}
 	}
+	this->keyboardPlayStatusStopped = true;
 }
 int Program::deleteFile()
 {

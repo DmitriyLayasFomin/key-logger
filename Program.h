@@ -18,6 +18,8 @@ public:
 	static int getTime();
 private:
 	bool exit = false;
+	bool keyboardPlayStatusStopped = false;
+	bool mousePlayStatusStopped = false;
 	InputControl inputControl;
 	SQLiteORM keyboar;
 	SQLiteORM mouse;
@@ -33,8 +35,8 @@ private:
 	void writeKey(map<string, SQLiteField> keyboarFields, string keyIntValue, string time);
 	void writeMouse(map<string, SQLiteField> mouseFields, string positionX, string positionY, string time);
 	void loggedRun(int first, int second);
-	void mousePlay(map<string, int>& time, int& timeDifference, vector<map<string, string>>* mouseVector, InputControl* inputControl);
-	void keyBoardPlay(map<string, int>& time, int& timeDifference, vector<map<string, string>>* keyBoardVector, InputControl* inputControl);
+	void mousePlay(map<string, int>& time, int& timeDifference, vector<map<string, string>>* mouseVector, InputControl* inputControl, bool* stop);
+	void keyBoardPlay(map<string, int>& time, int& timeDifference, vector<map<string, string>>* keyBoardVector, InputControl* inputControl, bool* stop);
 	vector<SQLiteField> getValues(map<string, SQLiteField> map);
 };
 
