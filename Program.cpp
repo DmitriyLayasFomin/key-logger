@@ -150,16 +150,11 @@ void Program::recordInputControl(int virtualFirst, int virtualSecond)
 	});
 
 	th.detach();
-
-	if (!thkbrd.joinable())
-		thkbrd.join();
-	if (!thmouse.joinable())
-		thmouse.join();
-
-	while (thkbrd.joinable() && thmouse.joinable() && !*stop && !this->getExit()) {}
 	thkbrd.detach();
-	thkbrd.~thread();
 	thmouse.detach();
+
+	while (!*stop && !this->getExit()) {}
+	thkbrd.~thread();
 	thmouse.~thread();
 }
 void Program::loggedRun(int first, int second)
