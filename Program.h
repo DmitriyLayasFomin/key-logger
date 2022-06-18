@@ -32,11 +32,12 @@ private:
 	const int logIntervalKey = 150;
 	const int logIntervalCursor = 30;
 
+	bool getExit();
 	void writeKey(map<string, SQLiteField> keyboarFields, string keyIntValue, string time);
 	void writeMouse(map<string, SQLiteField> mouseFields, string positionX, string positionY, string time);
 	void loggedRun(int first, int second);
-	void mousePlay(map<string, int>& time, int& timeDifference, vector<map<string, string>>* mouseVector, InputControl* inputControl, bool* stop);
-	void keyBoardPlay(map<string, int>& time, int& timeDifference, vector<map<string, string>>* keyBoardVector, InputControl* inputControl, bool* stop);
+	void mousePlay(map<string, int>& time, int* timeDifference, vector<map<string, string>>* mouseVector, InputControl* inputControl, bool* stop);
+	void keyBoardPlay(map<string, int>& time, int* timeDifference, vector<map<string, string>>* keyBoardVector, InputControl* inputControl, bool* stop);
 	vector<SQLiteField> getValues(map<string, SQLiteField> map);
 };
 
