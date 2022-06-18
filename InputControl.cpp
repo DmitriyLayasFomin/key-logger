@@ -21,17 +21,9 @@ int InputControl::getIntKeyByVirtual(int value)
 
 void InputControl::calibrationKeyboard() {
 	for (int i = 1; i < this->countChars; i++) {
-		keybd_event(NULL,
-			i,
-			KEYEVENTF_EXTENDEDKEY | 0,
-			0);
-		int virtualKey = MapVirtualKeyA(i, 1);
+		char virtualKey = MapVirtualKeyA(i, MAPVK_VSC_TO_VK);
 		Key key = Key(virtualKey, i);
 		this->keyboard.push_back(key);
-		keybd_event(NULL,
-			i,
-			KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP,
-			0);
 	}
 	this->keyboard.push_back(Key(VK_LBUTTON, 0));
 	this->keyboard.push_back(Key(VK_RBUTTON, 0));

@@ -11,7 +11,7 @@ public:
 	int getHardValue();
 	int getVirtualKeyValue();
 private:
-	char virtualKey;
+	int virtualKey;
 	int intValue;
 };
 

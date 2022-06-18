@@ -7,7 +7,7 @@ Key::Key(int virtualKey, int intValue)
 void Key::press()
 {
 	if (this->intValue > 0) {
-		keybd_event(NULL,
+		keybd_event(this->virtualKey,
 			this->intValue,
 			KEYEVENTF_EXTENDEDKEY | 0,
 			0);
@@ -25,8 +25,8 @@ void Key::press()
 void Key::release()
 {
 	if (this->intValue > 0) {
-		keybd_event(NULL,
-			this->virtualKey,
+		keybd_event(this->virtualKey,
+			this->intValue,
 			KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP,
 			0);
 	}
