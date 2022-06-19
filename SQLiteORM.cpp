@@ -139,15 +139,19 @@ void SQLiteORM::selectAll(void *result,string sortFieldName, string sortOrder = 
     this->replace(sql, this->fieldNameTemplate, sortFieldName);
     this->replace(sql, this->orderTemplate, sortOrder);
     sqlite3_exec(this->db, sql.c_str(), callback, &pvector, & this->err);
-    for (auto &value : pvector) {
-        if (tmpMap.size() > 0 && tmpMap.find(value.name) != tmpMap.end()) {
+    for (auto& value : pvector) {
+        if (tmpMap.size() > 0 && tmpMap.find(value.name) == tmpMap.begin()) {
                 vectorMap->push_back(tmpMap);
                 tmpMap.clear();
         }
         tmpMap.insert({ value.name ,value.value });
+        if (tmpMap.size() > 0 && pvector.back().name == value.name) {
+            vectorMap->push_back(tmpMap);
+            tmpMap.clear();
+        }
     }
     sort(vectorMap->begin(), vectorMap->end(), [&sortFieldName](map<string, string> i1, map<string, string> i2){
-        return (i1.find(sortFieldName)->second < i2.find(sortFieldName)->second);
+        return (atoi(i1.find(sortFieldName)->second.c_str()) < atoi(i2.find(sortFieldName)->second.c_str()));
     });
 }
 

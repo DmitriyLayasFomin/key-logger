@@ -7,9 +7,9 @@
 using namespace std;
 class SQLiteField {
 public:
-	string name;
-	string type;
-	string value;
+	string name = "";
+	string type = "";
+	string value = "";
 	bool primary;
 	bool autoincrement;
 	SQLiteField(string name, string type, bool primary = false, bool autoincrement = false)
@@ -26,6 +26,10 @@ public:
 	string getValue()
 	{
 		return this->value;
+	}
+	bool hasValue()
+	{
+		return !this->value.empty();
 	}
 	
 };

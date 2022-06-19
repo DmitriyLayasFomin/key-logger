@@ -7,6 +7,9 @@ using namespace std;
 class InputControl
 {
 public:
+	const int countChars = 256;
+	const int combinationDelay = 1000;
+
 	void init();
 	bool isPressedCombination(int first, int second);
 	int getSizeKeyboard();
@@ -22,7 +25,5 @@ private:
 	vector <Key> keyboard;
 	Mouse mouse;
 	int pressedCombination;
-	const int countChars = 256;
-	const int combinationDelay = 1000;
 };
 
