@@ -6,7 +6,6 @@ void InputControl::init()
 {
 	this->mouse.init();
 	this->calibrationKeyboard();
-	MessageBeep(MB_ICONINFORMATION);
 }
 int InputControl::getIntKeyByVirtual(int value)
 {
@@ -23,6 +22,7 @@ void InputControl::calibrationKeyboard() {
 	for (int i = 1; i < this->countChars; i++) {
 		char virtualKey = MapVirtualKeyA(i, MAPVK_VSC_TO_VK);
 		Key key = Key(virtualKey, i);
+		key.release();
 		this->keyboard.push_back(key);
 	}
 	this->keyboard.push_back(Key(VK_LBUTTON, 0));
@@ -50,10 +50,14 @@ int InputControl::getLastPressedVirtualKey()
 }
 bool InputControl::isPressedCombination(int virtualFirst, int virtualSecond)
 {
-	if (GetAsyncKeyState(virtualFirst) && GetAsyncKeyState(virtualSecond) && this->getTime() - this->pressedCombination > this->combinationDelay) {
-		this->pressedCombination = this->getTime();
+	BYTE keys[256] = {};
+	if (!GetKeyboardState(keys)) {
+		DWORD word = GetLastError();
+	};
+	bool a = keys[virtualFirst] > 0;
+	bool b = keys[virtualSecond] > 0;
+	if (keys[virtualFirst] > 0 && keys[virtualSecond] > 0) {
 		return true;
-
 	}
 	return false;
 }
@@ -84,8 +88,7 @@ Mouse InputControl::getMouse()
 {
 	return this->mouse;
 }
-int InputControl::getTime()
+UINT InputControl::getTime()
 {
-	using namespace std::chrono;
-	return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+	return static_cast<UINT>(time(0));
 }

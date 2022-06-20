@@ -6,18 +6,19 @@
 #include <future>
 #include <mutex>
 #include <thread>
+#include <chrono>
 using namespace std;
 class Program
 {
 public:
 	Program(void);
 	void start();
-	InputControl* getInputControl();
+	InputControl& getInputControl();
 	void recordInputControl(int virtualFirst, int virtualSecond);
 	void filterLog(vector<map<string, SQLiteField>>& keyboardVec);
 
 	int deleteFile();
-	static int getTime();
+	static UINT getTime();
 	mutex& getMutex();
 	void setKeyReleaseWait(int key, bool isRuning);
 	bool getKeyReleaseWait(int key);
@@ -43,8 +44,8 @@ private:
 	void writeMouse(vector <map<string, SQLiteField>> vec);
 	void writeMouseInVector(vector<map<string, SQLiteField>>* vec, map<string, SQLiteField> mouseFields, string positionX, string positionY, string time);
 	void loggedRun(int first, int second);
-	void mousePlay(map<string, int>& time, int* timeDifference, vector<map<string, string>>* mouseVector, InputControl* inputControl, bool& stop);
-	void keyBoardPlay(map<string, int>& time, int* timeDifference, vector<map<string, string>>* keyBoardVector, InputControl* inputControl, bool& stop);
+	void mousePlay(map<string, UINT>& time, UINT* timeDifference, vector<map<string, string>>* mouseVector, InputControl& inputControl, bool& stop);
+	void keyBoardPlay(map<string, UINT>& time, UINT* timeDifference, vector<map<string, string>>* keyBoardVector, InputControl& inputControl, bool& stop);
 	vector<SQLiteField> getValues(map<string, SQLiteField> map);
 	void writeKeyInVector(vector<map<string, SQLiteField>>* vec, map<string, SQLiteField> keyboarFields, string keyIntValue, string time);
 };

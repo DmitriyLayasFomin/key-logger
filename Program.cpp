@@ -3,6 +3,7 @@
 
 Program::Program()
 {
+	this->getInputControl().init();
 	this->keyboarFields = {
 		{"KEY_VALUE", SQLiteField("KEY_VALUE","INT")},
 		{"TIME", SQLiteField("TIME","INT")},
@@ -16,46 +17,45 @@ Program::Program()
 	SQLiteORM sqlORM;
 	sqlORM.setTable("KEYBOARD")->open()->createTable(getValues(this->keyboarFields))->close();
 	sqlORM.setTable("MOUSE")->open()->createTable(getValues(this->mouseFields))->close();
-	for (int i = 0; i < this->getInputControl()->countChars; i++) {
+	for (int i = 0; i < this->getInputControl().countChars; i++) {
 		this->keyReleaseWait.insert({ i, false });
 	}
+	
 }
 void Program::start()
 {
-	this->queueTask.push(std::async(std::launch::async, [&, this] {
-		while (!(GetAsyncKeyState('0') & 0x80)) {
-			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x31)) {
-				this->mx.lock();
-				cout << "Set input start." << endl;
-				this->getInputControl()->init();
-				cout << "Set input codes is succsess." << endl;
-				this->mx.unlock();
-			}
-			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x32)) {
+	Sleep(2000);
+	BYTE a[256] = {};
+	GetKeyboardState(a);
+	thread mainBackground = thread([=]() mutable {
+		while (!this->getInputControl().isPressedCombination(VK_CONTROL, 0x37)) {
+			int b = GetAsyncKeyState(VK_CONTROL);
+			int c = GetAsyncKeyState(0x32);
+			int a = this->getInputControl().getLastPressedVirtualKey();
+			if (this->getInputControl().isPressedCombination(VK_CONTROL, 0x32)) {
 				this->mx.lock();
 				cout << "Kyelogger start." << endl;
-				Sleep(500);
 				MessageBeep(MB_ICONINFORMATION);
 				this->mx.unlock();
-				this->recordInputControl(VK_LCONTROL, 0x32);
+				this->recordInputControl(VK_CONTROL, 0x32);
 				this->mx.lock();
 				cout << "Kyelogger stop." << endl;
 				MessageBeep(MB_ICONERROR);
 				this->mx.unlock();
 			}
-			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x33)) {
+			if (this->getInputControl().isPressedCombination(VK_CONTROL, 0x33)) {
 				this->mx.lock();
 				cout << "logged repeat start." << endl;
 				MessageBeep(MB_ICONINFORMATION);
 				this->mx.unlock();
-				this->loggedRun(VK_LCONTROL, 0x33);
+				this->loggedRun(VK_CONTROL, 0x33);
 				this->mx.lock();
 				cout << "logged repeat stop." << endl;
 				MessageBeep(MB_ICONERROR);
 				Sleep(1000);
 				this->mx.unlock();
 			}
-			if (this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x37)) {
+			if (this->getInputControl().isPressedCombination(VK_CONTROL, 0x37)) {
 				for (int i = 0; i < this->queueWriter.size(); i++) {
 					this->queueWriter.front().wait();
 				}
@@ -69,11 +69,18 @@ void Program::start()
 				break;
 			}
 		}
-	}));
+	});
+	if(!mainBackground.joinable())
+		mainBackground.join();
+
+	while (mainBackground.joinable())
+	{
+
+	}
 }
-InputControl* Program::getInputControl()
+InputControl& Program::getInputControl()
 {
-	return &this->inputControl;
+	return this->inputControl;
 }
 vector<SQLiteField> Program::getValues(map<string, SQLiteField> map)
 {
@@ -98,11 +105,11 @@ void Program::writeKeyInVector(vector <map<string, SQLiteField>>* vec, map<strin
 			this->setKeyReleaseWait(atoi(key.c_str()), true);
 			keyboarFieldsCopy.find("RELEASED")->second.setValue("1");
 			cout << "queueWriter" << endl;
-			while (!this->exit && !this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x32)) {
+			while (!this->exit && !this->getInputControl().isPressedCombination(VK_CONTROL, 0x32)) {
 				if (!(GetAsyncKeyState(atoi(key.c_str())) < 0)) {
 					{
 						std::lock_guard<std::mutex> guard(this->getMutex());
-						int time = getTime();
+						UINT time = getTime();
 						keyboarFieldsCopy.find("TIME")->second.setValue(to_string(time));
 						vec->push_back(keyboarFieldsCopy);
 						this->setKeyReleaseWait(atoi(key.c_str()), false);
@@ -141,6 +148,7 @@ void Program::writeMouseInVector(vector <map<string, SQLiteField>>* vec, map<str
 }
 void Program::recordInputControl(int virtualFirst, int virtualSecond)
 {
+	Sleep(1000);
 	bool* stop = new bool(false);
 	int saveFile[] = { 0, 0 };
 	vector <map<string, SQLiteField>> keyboardVec;
@@ -158,7 +166,7 @@ void Program::recordInputControl(int virtualFirst, int virtualSecond)
 				Sleep(this->logIntervalKey);
 			}
 			int lastVirtual = this->inputControl.getLastPressedVirtualKey();
-			int time = getTime();
+			UINT time = getTime();
 			if (!keyboardVec.empty()) {
 				int lastInVector = atoi(keyboardVec.back().find("KEY_VALUE")->second.getValue().c_str());
 				if (lastVirtual == lastInVector) {
@@ -178,7 +186,7 @@ void Program::recordInputControl(int virtualFirst, int virtualSecond)
 				Sleep(this->logIntervalCursor);
 			}
 			Mouse mouse = this->inputControl.getMouse().getLastState();
-			int time = getTime();
+			UINT time = getTime();
 			this->writeMouseInVector(
 				&mouseVec,
 				this->mouseFields,
@@ -275,7 +283,7 @@ void Program::loggedRun(int first, int second)
 	thread th;
 	vector <map<string, string>>* keyBoardVector = new vector <map<string, string>>;
 	vector <map<string, string>>* mouseVector = new vector <map<string, string>>;
-	map <string, int> time = { {"MOUSE",0}, {"KEYBOARD",0} };
+	map <string, UINT> time = { {"MOUSE",0}, {"KEYBOARD",0} };
 	this->queueReader.push(std::async(launch::async, [](vector <map<string, string>>* mouseVector) {
 		SQLiteORM sqlORM;
 		sqlORM.setTable("MOUSE")->open()->selectAll(mouseVector, (string)"TIME", (string)"DESC");
@@ -294,14 +302,14 @@ void Program::loggedRun(int first, int second)
 	}
 
 
-	int timeDifference = getTime() - stoi(mouseVector->front().find("TIME")->second);
+	UINT timeDifference = getTime() - stoul(mouseVector->front().find("TIME")->second.c_str());
 
 	th = thread([=]() mutable {
 		std::mutex mx;
 		if (*stop) {
 			return;
 		}
-		while (!this->getInputControl()->isPressedCombination(VK_LCONTROL, 0x33) && !*stop) {
+		while (!this->getInputControl().isPressedCombination(VK_LCONTROL, 0x33) && !*stop) {
 		}
 		*stop = true;
 		mx.lock();
@@ -325,7 +333,7 @@ void Program::loggedRun(int first, int second)
 		{
 			mx.lock();
 			this->mousePlay(time, &timeDifference, mouseVector, this->getInputControl(), *stop);
-			timeDifference = getTime() - stoi(mouseVector->front().find("TIME")->second);
+			timeDifference = getTime() - stoul(mouseVector->front().find("TIME")->second.c_str());
 			mx.unlock();
 		}
 	});
@@ -345,7 +353,7 @@ void Program::loggedRun(int first, int second)
 	thkbrd.detach();
 	thkbrd.~thread();
 }
-void Program::mousePlay(map<string, int>& time, int* timeDifference, vector <map<string, string>>* mouseVector, InputControl* inputControl, bool& stop)
+void Program::mousePlay(map<string, UINT>& time, UINT* timeDifference, vector <map<string, string>>* mouseVector, InputControl& inputControl, bool& stop)
 {
 	this->mousePlayStatusStopped = false;
 	if (mouseVector->empty() || stop) {
@@ -369,7 +377,7 @@ void Program::mousePlay(map<string, int>& time, int* timeDifference, vector <map
 			return;
 		}
 		time.find("MOUSE")->second = stoi(mouse.find("TIME")->second);
-		inputControl->getMouse().setMouseCursor(
+		inputControl.getMouse().setMouseCursor(
 			dScreenX * stoi(mouse.find("POSITION_X")->second),
 			dScreenY * stoi(mouse.find("POSITION_Y")->second)
 		);
@@ -377,7 +385,7 @@ void Program::mousePlay(map<string, int>& time, int* timeDifference, vector <map
 	}
 	this->mousePlayStatusStopped = true;
 }
-void Program::keyBoardPlay(map<string, int>& time, int* timeDifference, vector <map<string, string>>* keyBoardVector, InputControl* inputControl, bool& stop)
+void Program::keyBoardPlay(map<string, UINT>& time, UINT* timeDifference, vector <map<string, string>>* keyBoardVector, InputControl& inputControl, bool& stop)
 {
 	this->keyboardPlayStatusStopped = false;
 	if (keyBoardVector->empty() || stop) {
@@ -396,7 +404,7 @@ void Program::keyBoardPlay(map<string, int>& time, int* timeDifference, vector <
 			return;
 		}
 		time.find("KEYBOARD")->second = stoi(keyboard.find("TIME")->second);
-		Key key = inputControl->getKeyByVirtualValue(stoi(keyboard.find("KEY_VALUE")->second));
+		Key key = inputControl.getKeyByVirtualValue(stoi(keyboard.find("KEY_VALUE")->second));
 		if (key.getVirtualKeyValue() != 0) {
 			if (stoi(keyboard.find("RELEASED")->second) < 1) {
 				key.press();
@@ -413,10 +421,9 @@ int Program::deleteFile()
 	SQLiteORM sqlORM;
 	return 1;//DeleteFileA(sqlORM.getFileName());
 }
-int Program::getTime()
+UINT Program::getTime()
 {
-	using namespace std::chrono;
-	return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+	return static_cast<UINT>(time(0));
 }
 
 bool Program::getExit()

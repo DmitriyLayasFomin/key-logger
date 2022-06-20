@@ -23,7 +23,6 @@ int main()
 		return 0;
 	}
 	cout << "Key logger working!" << endl;
-	cout << "CTRL + 1 - calibration." << endl;
 	cout << "CTRL + 2 - switch start / stop logging." << endl;
 	cout << "CTRL + 3 - logged record play." << endl;
 	cout << "CTRL + 7 exit." << endl;

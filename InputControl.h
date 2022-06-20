@@ -16,14 +16,14 @@ public:
 	Key getKeyByHardValue(int value);
 	Key getKeyByVirtualValue(int value);
 	Mouse getMouse();
-	int getTime();
 	int getLastPressedVirtualKey();
 private:
+	static UINT getTime();
 	void calibrationKeyboard();
 	int getVirtualKeyByHardValue(int);
 	int getIntKeyByVirtual(int value);
 	vector <Key> keyboard;
 	Mouse mouse;
-	int pressedCombination;
+	UINT pressedCombination;
 };
 
