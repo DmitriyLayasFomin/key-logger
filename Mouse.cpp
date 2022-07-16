@@ -4,8 +4,8 @@ void Mouse::init()
 {
 	POINT point;
 	GetCursorPos(&point);
-	this->positionX = point.x;
-	this->positionY = point.y;
+	positionX = point.x;
+	positionY = point.y;
 }
 void Mouse::setMouseCursor(int x, int y)
 {
@@ -21,19 +21,19 @@ void Mouse::setPositionY(int positionY)
 };
 int Mouse::getPositionX()
 {
-	return this->positionX;
+	return positionX;
 };
 int Mouse::getPositionY()
 {
-	return this->positionY;
+	return positionY;
 };
 Mouse Mouse::getLastState()
 {
 	POINT p;
 	if (GetCursorPos(&p))
 	{
-		this->positionX = p.x;
-		this->positionY = p.y;
+		positionX = p.x;
+		positionY = p.y;
 	}
 	return *this;
 }

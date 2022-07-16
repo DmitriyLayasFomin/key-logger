@@ -1,4 +1,5 @@
 #include "Key.h"
+
 Key::Key(int virtualKey, int intValue)
 {
 	this->intValue = intValue;
@@ -6,17 +7,17 @@ Key::Key(int virtualKey, int intValue)
 }
 void Key::press()
 {
-	if (this->intValue > 0) {
-		keybd_event(this->virtualKey,
-			this->intValue,
+	if (intValue > 0) {
+		keybd_event(virtualKey,
+			intValue,
 			KEYEVENTF_EXTENDEDKEY | 0,
 			0);
 	}
 	else {
-		if (this->virtualKey == VK_LBUTTON) {
+		if (virtualKey == VK_LBUTTON) {
 			mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0);
 		}
-		else if (this->virtualKey == VK_RBUTTON) {
+		else if (virtualKey == VK_RBUTTON) {
 			mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0);
 		}
 	}
@@ -24,32 +25,40 @@ void Key::press()
 };
 void Key::release()
 {
-	if (this->intValue > 0) {
-		keybd_event(this->virtualKey,
-			this->intValue,
+	if (intValue > 0) {
+		keybd_event(virtualKey,
+			intValue,
 			KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP,
 			0);
 	}
 	else {
-		if (this->virtualKey == VK_LBUTTON) {
+		if (virtualKey == VK_LBUTTON) {
 			mouse_event(MOUSEEVENTF_LEFTUP, NULL, NULL, 0, 0);
 		}
-		else if (this->virtualKey == VK_RBUTTON) {
+		else if (virtualKey == VK_RBUTTON) {
 			mouse_event(MOUSEEVENTF_RIGHTUP, NULL, NULL, 0, 0);
 		}
 	}
 };
 void Key::pressAndRelease(int delay = 500)
 {
-	this->press();
+	press();
 	Sleep(delay);
-	this->release();
+	release();
 };
 int Key::getHardValue()
 {
-	return this->intValue;
+	return intValue;
 };
 int Key::getVirtualKeyValue()
 {
-	return this->virtualKey;
+	return virtualKey;
 };
+void Key::setStatus(int value)
+{
+	status = static_cast<Status>(value);
+}
+Status Key::getStatus()
+{
+	return status;
+}

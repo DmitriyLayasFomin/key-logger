@@ -18,20 +18,20 @@ string SQLiteORM::trim(string str) {
 }
 string SQLiteORM::getFieldCreateTable(SQLiteField field)
 {
-    string str = this->fieldInsertTemplate;
-    this->replace(str, this->fieldNameTemplate, field.name);
-    this->replace(str, this->fieldTypeTemplate, field.type);
+    string str = fieldInsertTemplate;
+    replace(str, fieldNameTemplate, field.name);
+    replace(str, fieldTypeTemplate, field.type);
     if (field.primary) {
-        this->replace(str, this->primaryTemplate, this->trim(this->primaryTemplate));
+        replace(str, primaryTemplate, trim(primaryTemplate));
     }
     else {
-        this->replace(str, this->primaryTemplate, "");
+        replace(str, primaryTemplate, "");
     }
     if (field.autoincrement) {
-        this->replace(str, this->autoincrementTemplate, this->trim(this->autoincrementTemplate));
+        replace(str, autoincrementTemplate, trim(autoincrementTemplate));
     }
     else {
-        this->replace(str, this->autoincrementTemplate, "");
+        replace(str, autoincrementTemplate, "");
     }
     return str;
 }
@@ -69,12 +69,12 @@ string SQLiteORM::getFieldValues(vector<SQLiteField> fields)
 }
 SQLiteORM* SQLiteORM::open()
 {
-    sqlite3_open(this->fileName, &this->db);
+    sqlite3_open(fileName, &db);
     return this;
 }
 SQLiteORM* SQLiteORM::close()
 {
-    sqlite3_close(this->db);
+    sqlite3_close(db);
     return this;
 }
 SQLiteORM* SQLiteORM::setTable(string tableName)
@@ -94,51 +94,51 @@ int SQLiteORM::callback(void *data, int argc, char** argv, char** azColName) {
 }
 SQLiteORM* SQLiteORM::createTable(vector<SQLiteField> fieldsInsert)
 {
-    string sql = this->createTableTemplate;
-    string fieldsTemplate;
+    string sql = createTableTemplate;
+    string fields;
     int i = 0;
     for (SQLiteField field : fieldsInsert)
     {
         if (i > 0) {
-            fieldsTemplate += ",";
+            fields += ",";
         }
-        fieldsTemplate += this->getFieldCreateTable(field);
+        fields += getFieldCreateTable(field);
         i++;
     }
 
-    this->replace(sql, this->tableNameTemplate, this->tableName);
-    this->replace(sql, this->fieldsTemplate, fieldsTemplate);
-    sqlite3_exec(this->db, sql.c_str(), 0, 0, &this->err);
+    replace(sql, tableNameTemplate, tableName);
+    replace(sql, fieldsTemplate, fields);
+    sqlite3_exec(db, sql.c_str(), 0, 0, &err);
     return this;
 }
 SQLiteORM* SQLiteORM::insert(vector<SQLiteField> fieldsInsert)
 {
     int rc = SQLITE_BUSY;
-    string sql = this->insertTemplate;
+    string sql = insertTemplate;
     for (SQLiteField& field : fieldsInsert) {
         if (field.value == "") {
             field.value = "0";
         }
     }
-    this->replace(sql, this->tableNameTemplate, this->tableName);
-    this->replace(sql, this->fieldNamesTemplate, this->getFieldNames(fieldsInsert));
-    this->replace(sql, this->fieldValuesTemplate, this->getFieldValues(fieldsInsert));
+    replace(sql, tableNameTemplate, tableName);
+    replace(sql, fieldNamesTemplate, getFieldNames(fieldsInsert));
+    replace(sql, fieldValuesTemplate, getFieldValues(fieldsInsert));
     do {
-        rc = sqlite3_exec(this->db, sql.c_str(), 0, 0, &this->err);
+        rc = sqlite3_exec(db, sql.c_str(), 0, 0, &err);
     } while (rc == SQLITE_BUSY);
     
     return this;
 }
 void SQLiteORM::selectAll(void *result,string sortFieldName, string sortOrder = "ASC")
 {
-    string sql = this->selectTemplate;
+    string sql = selectTemplate;
     vector <SQLiteField> pvector;
     vector <map<string, string>>* vectorMap = (vector <map<string, string>> *)result;
     map<string, string> tmpMap;
-    this->replace(sql, this->tableNameTemplate, this->tableName);
-    this->replace(sql, this->fieldNameTemplate, sortFieldName);
-    this->replace(sql, this->orderTemplate, sortOrder);
-    sqlite3_exec(this->db, sql.c_str(), callback, &pvector, & this->err);
+    replace(sql, tableNameTemplate, tableName);
+    replace(sql, fieldNameTemplate, sortFieldName);
+    replace(sql, orderTemplate, sortOrder);
+    sqlite3_exec(db, sql.c_str(), callback, &pvector, & err);
     for (auto& value : pvector) {
         if (tmpMap.size() > 0 && tmpMap.find(value.name) == tmpMap.begin()) {
                 vectorMap->push_back(tmpMap);
@@ -157,5 +157,5 @@ void SQLiteORM::selectAll(void *result,string sortFieldName, string sortOrder = 
 
 LPSTR SQLiteORM::getFileName()
 {
-    return this->fileName;
+    return fileName;
 }

@@ -25,11 +25,11 @@ public:
 	}
 	string getValue()
 	{
-		return this->value;
+		return value;
 	}
 	bool hasValue()
 	{
-		return !this->value.empty();
+		return !value.empty();
 	}
 	
 };

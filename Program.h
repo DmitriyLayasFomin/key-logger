@@ -11,14 +11,15 @@ using namespace std;
 class Program
 {
 public:
-	Program(void);
+	Program();
+	~Program();
 	void start();
 	InputControl& getInputControl();
 	void recordInputControl(int virtualFirst, int virtualSecond);
 	void filterLog(vector<map<string, SQLiteField>>& keyboardVec);
 
 	int deleteFile();
-	static UINT getTime();
+	static unsigned long int getTime();
 	mutex& getMutex();
 	void setKeyReleaseWait(int key, bool isRuning);
 	bool getKeyReleaseWait(int key);
@@ -32,21 +33,18 @@ private:
 	map<string, SQLiteField> keyboarFields;
 	map<string, SQLiteField> mouseFields;
 	map <int, bool> keyReleaseWait;
-	queue <std::future<void>> queueWriter;
-	queue <std::future<void>> queueTask;
-	queue <std::future<bool>> queueReader;
 	mutex mx;
-	const int logIntervalKey = 100;
+	const int logIntervalKey = 0;
 	const int logIntervalCursor = 15;
 
 	bool getExit();
 	void writeKey(vector <map<string, SQLiteField>> vec);
 	void writeMouse(vector <map<string, SQLiteField>> vec);
 	void writeMouseInVector(vector<map<string, SQLiteField>>* vec, map<string, SQLiteField> mouseFields, string positionX, string positionY, string time);
+	void writeKeyInVector(vector<map<string, SQLiteField>>* vec, map<string, SQLiteField> keyboarFields, string keyIntValue, string released, string time);
 	void loggedRun(int first, int second);
-	void mousePlay(map<string, UINT>& time, UINT* timeDifference, vector<map<string, string>>* mouseVector, InputControl& inputControl, bool& stop);
-	void keyBoardPlay(map<string, UINT>& time, UINT* timeDifference, vector<map<string, string>>* keyBoardVector, InputControl& inputControl, bool& stop);
+	void mousePlay(map<string, unsigned long> &time, unsigned long &timeDifference, vector<map<string, string>>* mouseVector, InputControl& inputControl, bool& stop);
+	void keyBoardPlay(map<string, unsigned long> &time, unsigned long &timeDifference, vector<map<string, string>>* keyBoardVector, InputControl& inputControl, bool& stop);
 	vector<SQLiteField> getValues(map<string, SQLiteField> map);
-	void writeKeyInVector(vector<map<string, SQLiteField>>* vec, map<string, SQLiteField> keyboarFields, string keyIntValue, string time);
 };
 

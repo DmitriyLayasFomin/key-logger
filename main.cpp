@@ -1,27 +1,11 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
+﻿
 #include "Program.h"
 
-BOOL WINAPI consoleHandler(DWORD signal) {
 
-	if (signal == CTRL_C_EVENT) {
-		/*Program programm;
-		if (programm.deleteFile() < 1) {
-			cout << "ERROR: Failed to clear data." << endl;
-			MessageBeep(MB_ICONERROR);
-			return FALSE;
-		}*/
-		cout << "Temporary files have been cleared." << endl;
-	}
-
-	return FALSE;
-}
 int main()
 {
 	Program programm;
-	if (!SetConsoleCtrlHandler(consoleHandler, TRUE)) {
-		printf("\nERROR: Could not set control handler.");
-		return 0;
-	}
+	
 	cout << "Key logger working!" << endl;
 	cout << "CTRL + 2 - switch start / stop logging." << endl;
 	cout << "CTRL + 3 - logged record play." << endl;

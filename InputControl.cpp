@@ -1,15 +1,18 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "InputControl.h"
 #include <chrono>
+#include <map>
+#include <mutex>
+using namespace std;
 
 void InputControl::init()
 {
-	this->mouse.init();
-	this->calibrationKeyboard();
+	mouse.init();
+	calibrationKeyboard();
 }
 int InputControl::getIntKeyByVirtual(int value)
 {
-	for (Key key : this->keyboard)
+	for (Key key : keyboard)
 	{
 		if (key.getVirtualKeyValue() == value) {
 			return key.getHardValue();
@@ -19,18 +22,46 @@ int InputControl::getIntKeyByVirtual(int value)
 }
 
 void InputControl::calibrationKeyboard() {
-	for (int i = 1; i < this->countChars; i++) {
+	for (int i = 1; i < countChars; i++) {
 		char virtualKey = MapVirtualKeyA(i, MAPVK_VSC_TO_VK);
 		Key key = Key(virtualKey, i);
-		key.release();
-		this->keyboard.push_back(key);
+		keyboard.push_back(key);
 	}
-	this->keyboard.push_back(Key(VK_LBUTTON, 0));
-	this->keyboard.push_back(Key(VK_RBUTTON, 0));
+	keyboard.push_back(Key(VK_LBUTTON, 0));
+	keyboard.push_back(Key(VK_RBUTTON, 0));
+
+	
+}
+bool InputControl::releaseEvent(int virtualCode)
+{
+	std::mutex mx;
+	mx.lock();
+	while (GetAsyncKeyState(virtualCode) != Status::UP) {}
+	mx.unlock();
+	return true;
+}
+void InputControl::startListen()
+{
+	updateKeyboardStatus = thread([&, this]() mutable {
+		std::mutex mx;
+		while (!stop) {
+			for (Key& key : keyboard)
+			{
+				int status = GetAsyncKeyState(key.getVirtualKeyValue());
+				key.setStatus(status);
+			}
+		}
+	});
+	updateKeyboardStatus.detach();
+}
+void InputControl::stoptListen()
+{
+	stop = true;
+	updateKeyboardStatus.~thread();
 }
 int InputControl::getVirtualKeyByHardValue(int value)
 {
-	for (Key key : this->keyboard)
+	for (Key key : keyboard)
 	{
 		if (key.getHardValue() == value) {
 			return key.getVirtualKeyValue();
@@ -38,11 +69,11 @@ int InputControl::getVirtualKeyByHardValue(int value)
 	}
 	return 0;
 }
-int InputControl::getLastPressedVirtualKey()
+int InputControl::getLastVirtualKey(Status status)
 {
-	for (Key key : this->keyboard)
+	for (Key key : keyboard)
 	{
-		if (GetAsyncKeyState(key.getVirtualKeyValue())) {
+		if (key.getStatus() == status) {
 			return key.getVirtualKeyValue();
 		}
 	}
@@ -50,24 +81,21 @@ int InputControl::getLastPressedVirtualKey()
 }
 bool InputControl::isPressedCombination(int virtualFirst, int virtualSecond)
 {
-	BYTE keys[256] = {};
-	if (!GetKeyboardState(keys)) {
-		DWORD word = GetLastError();
-	};
-	bool a = keys[virtualFirst] > 0;
-	bool b = keys[virtualSecond] > 0;
-	if (keys[virtualFirst] > 0 && keys[virtualSecond] > 0) {
-		return true;
+	if (getKeyByVirtualValue(virtualFirst).getStatus() == Status::PRESSED) {
+		if (getKeyByVirtualValue(virtualSecond).getStatus() == Status::DOWN) {
+			return true;
+		}
 	}
+	
 	return false;
 }
-int InputControl::getSizeKeyboard() 
+int InputControl::getSizeKeyboard()
 {
-	return this->keyboard.size();
+	return keyboard.size();
 }
 Key InputControl::getKeyByHardValue(int value)
 {
-	for (Key key : this->keyboard)
+	for (Key key : keyboard)
 	{
 		if (key.getHardValue() == value) {
 			return key;
@@ -76,7 +104,7 @@ Key InputControl::getKeyByHardValue(int value)
 }
 Key InputControl::getKeyByVirtualValue(int value)
 {
-	for (Key key : this->keyboard)
+	for (Key key : keyboard)
 	{
 		if (key.getVirtualKeyValue() == value) {
 			return key;
@@ -86,9 +114,9 @@ Key InputControl::getKeyByVirtualValue(int value)
 }
 Mouse InputControl::getMouse()
 {
-	return this->mouse;
+	return mouse;
 }
-UINT InputControl::getTime()
+unsigned long int InputControl::getTime()
 {
-	return static_cast<UINT>(time(0));
+	return static_cast<unsigned long int>(time(0));
 }
